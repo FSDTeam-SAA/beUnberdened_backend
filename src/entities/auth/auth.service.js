@@ -3,26 +3,31 @@ import jwt from 'jsonwebtoken';
 import { refreshTokenSecrete, emailExpires } from '../../core/config/config.js';
 import sendEmail from '../../lib/sendEmail.js';
 import verificationCodeTemplate from '../../lib/emailTemplates.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
 
 export const registerUserService = async ({
-  name,
+  fullName,
   email,
-  password
+  password, 
+  role,
 }) => {
   const existingUser = await User.findOne({ email });
   if (existingUser) throw new Error('User already registered.');
 
   const newUser = new User({
-    name,
+    fullName,
     email,
     password,
+    role,
+    isVerified: true ,
   });
 
   const user = await newUser.save();
 
-  const { _id, role, profileImage } = user;
-  return { _id, name, email, role,  profileImage };
+  const { _id, profileImage } = user;
+  return { _id, fullName, email, role, profileImage };
 };
 
 
@@ -38,41 +43,52 @@ export const loginUserService = async ({ email, password }) => {
 
   const payload = { _id: user._id, role: user.role };
 
-  const data = {
-    user,
-    accessToken: user.generateAccessToken(payload)
+
+    const accessToken = user.generateAccessToken(payload);
+    const refreshToken = user.generateRefreshToken(payload);
+
+
+    return {
+    accessToken,
+    refreshToken,
+    user: {
+      _id: user._id,
+      fullName: user.fullName,  
+      email: user.email,
+      role: user.role,
+      profileImage: user.profileImage
+    }
   };
-
-  user.refreshToken = user.generateRefreshToken(payload);
-  await user.save({ validateBeforeSave: false });
-
-  return data
 };
 
 
 export const refreshAccessTokenService = async (refreshToken) => {
   if (!refreshToken) throw new Error('No refresh token provided');
 
-  const user = await User.findOne({ refreshToken });
+  // ✅ Step 1: Verify token first
+  let decoded;
+  try {
+    decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+  } catch (err) {
+    throw new Error('Invalid refresh token');
+  }
 
-  if (!user) throw new Error('Invalid refresh token');
+  // ✅ Step 2: Find user
+  const user = await User.findById(decoded._id);
+  if (!user || user.refreshToken !== refreshToken) {
+    throw new Error('Invalid refresh token');
+  }
 
-  const decoded = jwt.verify(refreshToken, refreshTokenSecrete)
-
-  if (!decoded || decoded._id !== user._id.toString()) throw new Error('Invalid refresh token')
-
-  const payload = { _id: user._id , role: user.role }
-
+  // ✅ Step 3: Generate new tokens
+  const payload = { _id: user._id, role: user.role };
   const accessToken = user.generateAccessToken(payload);
   const newRefreshToken = user.generateRefreshToken(payload);
 
-  user.refreshToken = newRefreshToken;
-  await user.save({ validateBeforeSave: false })
+  // ✅ Step 4: Save new refresh token (invalidate old one)
+  // user.refreshToken = newRefreshToken;
+  // await user.save({ validateBeforeSave: false });
 
-  return {
-    accessToken,
-    refreshToken: newRefreshToken
-  }
+  return { accessToken, refreshToken: newRefreshToken };
 };
 
 
@@ -88,6 +104,7 @@ export const forgetPasswordService = async (email) => {
   user.otp = otp;
   user.otpExpires = otpExpires;
   user.otpVerified = false;
+  user.isVerified = false;
   user.resetExpires = null;
 
   await user.save({ validateBeforeSave: false });
@@ -98,7 +115,7 @@ export const forgetPasswordService = async (email) => {
     html: verificationCodeTemplate(otp),
   });
 
-  return;
+  return { otp };
 };
 
 
@@ -117,12 +134,13 @@ export const verifyCodeService = async ({ email, otp }) => {
     throw new Error('Invalid or expired otp');
   }
 
-  user.otp = null;
-  user.otpExpires = null;
+  user.otp = undefined;
+  user.otpExpires = undefined;
   user.otpVerified = true;
-  user.resetExpires = new Date(Date.now() + 15 * 60 * 1000); 
+  user.isVerified = true;
+  // user.resetExpires = new Date(Date.now() + 15 * 60 * 1000); 
 
-  await user.save({ validateBeforeSave: false });
+  await user.save();
 
   return;
 };
@@ -135,16 +153,13 @@ export const resetPasswordService = async ({ email, newPassword }) => {
   const user = await User.findOne({ email });
   if (!user) throw new Error('Invalid email');
 
-  if (!user.otpVerified || !user.resetExpires) {
+  if (!user.otpVerified || !user.isVerified) {
     throw new Error('otp not cleared');
-  }
-
-  if (Date.now() > user.resetExpires.getTime()) {
-    throw new Error('Reset session expired');
   }
 
   user.password = newPassword;
   user.otpVerified = false;
+  user.isVerified = false;
   user.resetExpires = null;
 
   await user.save();
@@ -165,5 +180,5 @@ export const changePasswordService = async ({ userId, oldPassword, newPassword }
   user.password = newPassword;
   await user.save();
 
-  return;
+  return
 };

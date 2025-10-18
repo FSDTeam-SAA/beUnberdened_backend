@@ -12,10 +12,10 @@ import {
 
 
 export const registerUser = async (req, res, next) => {
-  const { name, email, password } = req.body;
+  const { fullName, email, password, role } = req.body;
   try {
 
-    const data = await registerUserService({ name, email, password });
+    const data = await registerUserService({ fullName, email, password, role });
     generateResponse(res, 201, true, 'Registered user successfully!', data);
   }
 
@@ -36,8 +36,15 @@ export const loginUser = async (req, res, next) => {
   const { email, password } = req.body;
 
   try {
-    const data = await loginUserService({ email, password })
-    generateResponse(res, 200, true, 'Login successful', data);
+    const { accessToken, refreshToken, user } = await loginUserService({ email, password });
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,        
+      secure: true, 
+      sameSite: 'strict',   
+      path: '/',             
+      maxAge: 30 * 24 * 60 * 60 * 1000, 
+    });
+    generateResponse(res, 200, true, 'Login successful', { accessToken, refreshToken, user });
   }
 
   catch (error) {
@@ -61,35 +68,49 @@ export const loginUser = async (req, res, next) => {
 
 
 export const refreshAccessToken = async (req, res, next) => {
-  const { refreshToken } = req.body;
-
   try {
+    const refreshToken = req.refreshToken; // ✅ safer than req.body
+
     const tokens = await refreshAccessTokenService(refreshToken);
-    generateResponse(res, 200, true, 'Token refreshed', tokens);
-  }
 
-  catch (error) {
-    if (error.message === 'No refresh token provided') {
-      generateResponse(res, 400, false, 'No refresh token provided', null);
-    }
+    // ✅ Update refresh token cookie
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
-    else if (error.message === 'Invalid refresh token') {
-      generateResponse(res, 400, false, 'Invalid refresh token', null);
-    }
+    generateResponse(res, 200, true, 'Token refreshed successfully', { accessToken: tokens.accessToken });
+    // ✅ Send only access token in response
+    res.status(200).json({
+      success: true,
+      message: 'Token refreshed successfully',
+      data: { accessToken: tokens.accessToken }
+    });
 
-    else {
-      next(error)
+  } catch (error) {
+    if (['No refresh token provided', 'Invalid refresh token'].includes(error.message)) {
+      res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    } else {
+      next(error);
     }
   }
 };
+
+
 
 
 export const forgetPassword = async (req, res, next) => {
 
   const { email } = req.body;
   try {
-    await forgetPasswordService(email);
-    generateResponse(res, 200, true, 'Verification code sent to your email', null);
+    const { otp } = await forgetPasswordService(email);
+    generateResponse(res, 200, true, 'Verification code sent to your email', { otp });
   }
 
   catch (error) {
@@ -170,6 +191,7 @@ export const resetPassword = async (req, res, next) => {
 export const changePassword = async (req, res, next) => {
   const { oldPassword, newPassword } = req.body;
   const userId = req.user._id;
+  console.log('User ID in changePassword controller:', userId);
   try {
     await changePasswordService({ userId, oldPassword, newPassword });
     generateResponse(res, 200, true, 'Password changed successfully', null);
