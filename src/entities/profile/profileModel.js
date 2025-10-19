@@ -21,6 +21,7 @@ const profileSchema = new mongoose.Schema({
     email: {  
         type: String,
         default: "",
+        unique: true,
     },
     phoneNumber: {  
         type: String,
