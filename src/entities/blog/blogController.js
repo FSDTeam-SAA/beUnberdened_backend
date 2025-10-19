@@ -1,95 +1,96 @@
 import Blog from "./blogModel.js";
 import { getFileType, getResourceType } from "../../lib/fileTypeDetector.js";
-import { createFilter, createPaginationInfo } from "../../lib/pagination.js";
-import fs from 'fs/promises';
+import uploadToCloudinary from "../../lib/uploadToCloudinary.js";
 import mongoose from "mongoose";
 import cloudinary from "../../core/config/cloudinary.js";
 
-
+/**
+ * @desc    Create a new blog
+ * @route   POST /api/v1/blogs
+ * @access  Private (e.g., Admin)
+ */
 export const createBlog = async (req, res) => {
   try {
     const { title, readTime, description } = req.body;
 
+    // Validate required fields
+    if (!title || !description) {
+      return res.status(400).json({ error: 'Title and description are required' });
+    }
 
+    // Check if file exists
+    // if (!req.file) {
+    //   return res.status(400).json({ error: 'No file uploaded' });
+    // }
+
+    // Create blog document without image first
     const blog = new Blog({
       title,
-      readTime,
+      readTime: readTime || 0,
       description,
     });
 
     const savedBlog = await blog.save();
-    console.log(savedBlog);
 
-    if (!req.file) {
-          return res.status(400).json({ error: 'No file uploaded' });
-        }
-    
-        // Delete old file from Cloudinary if it exists
-        if (savedBlog.publicId) {
-          try {
-            const fileType = savedBlog.fileType || getFileType(savedBlog.mimeType, savedBlog.filename);
-            const resourceType = getResourceType(fileType);
-            
-            await cloudinary.uploader.destroy(savedBlog.publicId, {
-              resource_type: resourceType,
-              invalidate: true,
-            });
-          } catch (error) {
-            console.error('Error deleting old file from Cloudinary:', error);
-          }
-        }
-    
-        // Detect new file type
-        const fileType = getFileType(req.file.mimetype, req.file.filename);
-        const resourceType = getResourceType(fileType);
+    try {
+     if(req.file){
+      // Detect file type
+      const fileType = getFileType(req.file.mimetype, req.file.originalname);
+      const resourceType = getResourceType(fileType);
 
-        console.log(fileType, resourceType);
-    
-        // Upload new file to Cloudinary
-        let result;
-        try {
-          result = await cloudinary.uploader.upload(req.file.path, {
-            folder: 'blog-images',
-            resource_type: resourceType,
-            public_id: `blog/${savedBlog._id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            overwrite: true,
-            quality: 'auto',
-            fetch_format: 'auto',
-          });
-        } catch (uploadError) {
-          await fs.unlink(req.file.path).catch(console.error);
-          return res.status(500).json({ 
-            error: 'Failed to upload file to Cloudinary', 
-            details: uploadError.message 
-          });
-        }
-    
-        // Update profile with Cloudinary URL only (not local path)
-        savedBlog.uploadPhoto = result.secure_url;
-        savedBlog.publicId = result.public_id;
-        savedBlog.cloudinaryId = result.public_id;
-        savedBlog.fileType = fileType;
-        savedBlog.mimeType = req.file.mimetype;
-        savedBlog.fileSize = req.file.size;
-        savedBlog.uploadedAt = new Date();
-        
-        await savedBlog.save();
-    
-        return res.status(200).json({
-          success: true,
-          message: 'Profile updated successfully',
-          blog: savedBlog
-        });
-    
-      } catch (error) {
-        return res.status(500).json({ message: 'Server error', error: error.message });
-      }
+      // Upload to Cloudinary directly from buffer (NO LOCAL STORAGE)
+      const result = await uploadToCloudinary(
+        req.file.buffer,
+        req.file.originalname,
+        'blog-images'
+      );
+
+      // Update blog with Cloudinary data
+      savedBlog.uploadPhoto = result.secure_url;
+      savedBlog.publicId = result.public_id;
+      savedBlog.cloudinaryId = result.public_id;
+      savedBlog.fileType = fileType;
+      savedBlog.mimeType = req.file.mimetype;
+      savedBlog.fileSize = req.file.size;
+      savedBlog.filename = req.file.originalname;
+      savedBlog.uploadedAt = new Date();
+
+      await savedBlog.save();
+    }
+
+      return res.status(201).json({
+        success: true,
+        message: 'Blog created successfully',
+        blog: savedBlog,
+      });
+
+    } catch (uploadError) {
+      // If upload fails, delete the blog document
+      await Blog.findByIdAndDelete(savedBlog._id);
+      console.error('Upload error:', uploadError);
+      return res.status(500).json({
+        error: 'Failed to upload file to Cloudinary',
+        details: uploadError.message,
+      });
+  }
+
+  } catch (error) {
+    console.error('Create blog error:', error);
+    return res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message 
+    });
+  }
 };
 
+/**
+ * @desc    Get all blogs with pagination and filters
+ * @route   GET /api/v1/blogs
+ * @access  Public
+ */
 export const getAllBlogs = async (req, res) => {
   try {
     const { status, featured, page = 1, limit = 10, sort = "-createdAt" } = req.query;
-
 
     const query = {};
     if (status) query.status = status;
@@ -110,8 +111,11 @@ export const getAllBlogs = async (req, res) => {
       blogs,
     });
   } catch (error) {
-    console.error("Get all blogs error:", error);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    console.error('Get all blogs error:', error);
+    return res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 };
 
@@ -123,17 +127,28 @@ export const getAllBlogs = async (req, res) => {
 export const getBlogById = async (req, res) => {
   try {
     const { id } = req.params;
-    const blog = await Blog.findById(id);
-    if (!blog) return res.status(404).json({ message: "Blog not found" });
 
-    return res.status(200).json({ 
-        success: true, 
-        message:"Get single blog",
-        blog: blog 
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid blog ID' });
+    }
+
+    const blog = await Blog.findById(id);
+    if (!blog) {
+      return res.status(404).json({ message: 'Blog not found' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Blog retrieved successfully',
+      blog,
     });
   } catch (error) {
-    console.error("Get blog by ID error:", error);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    console.error('Get blog by ID error:', error);
+    return res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 };
 
@@ -146,21 +161,30 @@ export const updateBlog = async (req, res) => {
   try {
     const { title, readTime, description } = req.body;
 
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid blog ID' });
+    }
+
     const blog = await Blog.findById(req.params.id);
-    if (!blog) return res.status(404).json({ message: "Blog not found" });
+    if (!blog) {
+      return res.status(404).json({ message: 'Blog not found' });
+    }
 
-    
+    // Update text fields
+    if (title) blog.title = title;
+    if (readTime) blog.readTime = readTime;
+    if (description) blog.description = description;
 
-     if (!req.file) {
-          return res.status(400).json({ error: 'No file uploaded' });
-        }
-    
+    // Handle file upload if provided
+    if (req.file) {
+      try {
         // Delete old file from Cloudinary if it exists
         if (blog.publicId) {
           try {
             const fileType = blog.fileType || getFileType(blog.mimeType, blog.filename);
             const resourceType = getResourceType(fileType);
-            
+
             await cloudinary.uploader.destroy(blog.publicId, {
               resource_type: resourceType,
               invalidate: true,
@@ -169,55 +193,52 @@ export const updateBlog = async (req, res) => {
             console.error('Error deleting old file from Cloudinary:', error);
           }
         }
-    
+
         // Detect new file type
-        const fileType = getFileType(req.file.mimetype, req.file.filename);
+        const fileType = getFileType(req.file.mimetype, req.file.originalname);
         const resourceType = getResourceType(fileType);
 
-        console.log(fileType, resourceType);
-    
-        // Upload new file to Cloudinary
-        let result;
-        try {
-          result = await cloudinary.uploader.upload(req.file.path, {
-            folder: 'blog-images',
-            resource_type: resourceType,
-            public_id: `blog/${blog._id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            overwrite: true,
-            quality: 'auto',
-            fetch_format: 'auto',
-          });
-        } catch (uploadError) {
-          await fs.unlink(req.file.path).catch(console.error);
-          return res.status(500).json({ 
-            error: 'Failed to upload file to Cloudinary', 
-            details: uploadError.message 
-          });
-        }
-    
-        // Update profile with Cloudinary URL only (not local path)
+        // Upload new file to Cloudinary directly from buffer (NO LOCAL STORAGE)
+        const result = await uploadToCloudinary(
+          req.file.buffer,
+          req.file.originalname,
+          'blog-images'
+        );
+
+        // Update blog with new Cloudinary data
         blog.uploadPhoto = result.secure_url;
         blog.publicId = result.public_id;
         blog.cloudinaryId = result.public_id;
         blog.fileType = fileType;
         blog.mimeType = req.file.mimetype;
         blog.fileSize = req.file.size;
+        blog.filename = req.file.originalname;
         blog.uploadedAt = new Date();
 
-        blog.title = title || blog.title;
-        blog.readTime = readTime || blog.readTime;
-        blog.description = description || blog.description;
-        
-        const updateBlog =  await blog.save();
-    
-        return res.status(200).json({
-          success: true,
-          message: 'Profile updated successfully',
-          blog: updateBlog
+      } catch (uploadError) {
+        console.error('Upload error:', uploadError);
+        return res.status(500).json({
+          error: 'Failed to upload file to Cloudinary',
+          details: uploadError.message,
         });
+      }
+    }
+
+    // Save updated blog
+    const updatedBlog = await blog.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Blog updated successfully',
+      blog: updatedBlog,
+    });
+
   } catch (error) {
-    console.error("Update blog error:", error);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    console.error('Update blog error:', error);
+    return res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 };
 
@@ -228,24 +249,44 @@ export const updateBlog = async (req, res) => {
  */
 export const deleteBlog = async (req, res) => {
   try {
-
-    const blog = await Blog.findById(req.params.id);
-    if (!blog) return res.status(404).json({ message: "Blog not found" });
-
-    // Delete photo from disk
-    if (blog.uploadPhoto) {
-      const imagePath = path.join("uploads/images", path.basename(blog.uploadPhoto));
-      if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid blog ID' });
     }
 
-    await blog.deleteOne();
+    const blog = await Blog.findById(req.params.id);
+    if (!blog) {
+      return res.status(404).json({ message: 'Blog not found' });
+    }
+
+    // Delete image from Cloudinary if it exists
+    if (blog.publicId) {
+      try {
+        const fileType = blog.fileType || 'image';
+        const resourceType = getResourceType(fileType);
+
+        await cloudinary.uploader.destroy(blog.publicId, {
+          resource_type: resourceType,
+          invalidate: true,
+        });
+      } catch (error) {
+        console.error('Error deleting file from Cloudinary:', error);
+      }
+    }
+
+    // Delete blog document
+    await Blog.findByIdAndDelete(req.params.id);
 
     return res.status(200).json({
       success: true,
-      message: "Blog deleted successfully",
+      message: 'Blog deleted successfully',
     });
+
   } catch (error) {
-    console.error("Delete blog error:", error);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    console.error('Delete blog error:', error);
+    return res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 };
