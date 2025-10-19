@@ -9,6 +9,9 @@ import {
   changePasswordService,
   registerUserService
 } from './auth.service.js';
+import dotenv from 'dotenv';
+dotenv.config();
+import jwt from 'jsonwebtoken';
 
 
 export const registerUser = async (req, res, next) => {
@@ -69,7 +72,10 @@ export const loginUser = async (req, res, next) => {
 
 export const refreshAccessToken = async (req, res, next) => {
   try {
-    const refreshToken = req.refreshToken; // ✅ safer than req.body
+    const { refreshToken } = req.body; 
+
+    console.log('Received refresh token:', refreshToken);
+    if (!refreshToken) generateResponse(res, 400, false, 'No refresh token provided', null);
 
     const tokens = await refreshAccessTokenService(refreshToken);
 
@@ -79,16 +85,10 @@ export const refreshAccessToken = async (req, res, next) => {
       secure: true,
       sameSite: 'strict',
       path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     generateResponse(res, 200, true, 'Token refreshed successfully', { accessToken: tokens.accessToken });
-    // ✅ Send only access token in response
-    res.status(200).json({
-      success: true,
-      message: 'Token refreshed successfully',
-      data: { accessToken: tokens.accessToken }
-    });
 
   } catch (error) {
     if (['No refresh token provided', 'Invalid refresh token'].includes(error.message)) {
@@ -215,9 +215,21 @@ export const changePassword = async (req, res, next) => {
 
 export const logoutUser = async (req, res, next) => {
 
-  const userId = req.user._id;
+  const token = req.token;
   try {
-    await User.findByIdAndUpdate(userId, { refreshToken: null });
+
+    // Decode token to verify user identity
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+
+    // Store token in blacklist (so it can’t be reused)
+    // await Blacklist.create({ token, userId: decoded.id, expiredAt: decoded.exp * 1000 });
+   
+    // Clear refresh token cookie and remove from user record
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+    });
     generateResponse(res, 200, true, 'Logged out successfully', null);
   }
 

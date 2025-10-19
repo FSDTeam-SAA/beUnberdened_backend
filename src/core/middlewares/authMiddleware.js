@@ -17,6 +17,7 @@ export const verifyToken = async (req, res, next) => {
       return generateResponse(res, 401, false, 'User not found', null); 
     }
     req.user = user;
+    req.token = token;
     next();
   } 
   catch (err) {

@@ -1,4 +1,5 @@
 import User from './auth.model.js';
+import Profile from '../profile/profileModel.js';
 import jwt from 'jsonwebtoken';
 import { refreshTokenSecrete, emailExpires } from '../../core/config/config.js';
 import sendEmail from '../../lib/sendEmail.js';
@@ -26,8 +27,16 @@ export const registerUserService = async ({
 
   const user = await newUser.save();
 
+  const newProfile = new Profile({
+    userId: user._id,
+    fullName,
+    email,
+  });
+
+  const profile = await newProfile.save();
+
   const { _id, profileImage } = user;
-  return { _id, fullName, email, role, profileImage };
+  return { _id, fullName, email, role, profileImage, profile };
 };
 
 
@@ -63,7 +72,7 @@ export const loginUserService = async ({ email, password }) => {
 
 
 export const refreshAccessTokenService = async (refreshToken) => {
-  if (!refreshToken) throw new Error('No refresh token provided');
+  
 
   // ✅ Step 1: Verify token first
   let decoded;
@@ -75,7 +84,7 @@ export const refreshAccessTokenService = async (refreshToken) => {
 
   // ✅ Step 2: Find user
   const user = await User.findById(decoded._id);
-  if (!user || user.refreshToken !== refreshToken) {
+  if (!user) {
     throw new Error('Invalid refresh token');
   }
 
