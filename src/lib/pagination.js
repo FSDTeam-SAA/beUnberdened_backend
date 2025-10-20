@@ -1,7 +1,7 @@
-export const createFilter = (search, date) => {
+export const createFilter = (search, date, searchField = "name") => {
   let filter = {};
-  if (search) {
-    filter.name = { $regex: search, $options: "i" };
+   if (search) {
+    filter[searchField] = { $regex: search, $options: "i" };
   }
   if (date) {
     const _date = new Date(date);

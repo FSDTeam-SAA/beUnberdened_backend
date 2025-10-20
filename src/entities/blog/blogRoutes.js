@@ -9,7 +9,7 @@ router.post('/create', verifyToken, multerUpload.single('uploadPhoto'), createBl
 router.get('/all', verifyToken, getAllBlogs);
 router.get('/single/:id', getBlogById);
 router.put('/update/:id', verifyToken, multerUpload.single('uploadPhoto'), updateBlog);
-router.delete('/delete-blog/:id', verifyToken, deleteBlog);
+router.delete('/delete/:id', verifyToken, deleteBlog);
 
 
 router.get('/test', (req, res)=>{
