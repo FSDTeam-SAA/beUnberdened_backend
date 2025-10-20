@@ -3,6 +3,7 @@ import { getFileType, getResourceType } from "../../lib/fileTypeDetector.js";
 import uploadToCloudinary from "../../lib/uploadToCloudinary.js";
 import mongoose from "mongoose";
 import cloudinary from "../../core/config/cloudinary.js";
+import { createFilter, createPaginationInfo} from "../../lib/pagination.js";
 
 /**
  * @desc    Create a new blog
@@ -90,31 +91,46 @@ export const createBlog = async (req, res) => {
  */
 export const getAllBlogs = async (req, res) => {
   try {
-    const { status, featured, page = 1, limit = 10, sort = "-createdAt" } = req.query;
+    const { 
+      search, 
+      date, 
+      status, 
+      featured, 
+      page = 1, 
+      limit = 10, 
+      sort = "-createdAt" 
+    } = req.query;
 
-    const query = {};
-    if (status) query.status = status;
-    if (featured) query.featured = featured === "true";
+    // ✅ create dynamic filter
+    const query = createFilter(req.query.search, req.query.date, "title");
+
+    // Add extra filters if needed
+    // if (status) query.status = status;
+    // if (featured) query.featured = featured === "true";
+
+    // ✅ pagination
+    const skip = (page - 1) * limit;
 
     const blogs = await Blog.find(query)
       .sort(sort)
-      .skip((page - 1) * limit)
+      .skip(skip)
       .limit(parseInt(limit));
 
     const total = await Blog.countDocuments(query);
 
+    // ✅ create pagination info
+    const pagination = createPaginationInfo(parseInt(page), parseInt(limit), total);
+
     return res.status(200).json({
       success: true,
-      total,
-      page: parseInt(page),
-      limit: parseInt(limit),
+      pagination,
       blogs,
     });
   } catch (error) {
-    console.error('Get all blogs error:', error);
-    return res.status(500).json({ 
-      message: 'Server error', 
-      error: error.message 
+    console.error("Get all blogs error:", error);
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message,
     });
   }
 };
