@@ -39,14 +39,18 @@ export const getAllContractsService = async ({
   page = 1,
   limit = 10,
   sort = "-createdAt",
+  status,
 }) => {
   const query = createFilter(search, date, "fullName");
+  if(status) query.status = status;
   const skip = (page - 1) * limit;
 
   const contracts = await Contract.find(query)
     .sort(sort)
     .skip(skip)
     .limit(parseInt(limit));
+
+  
 
   const total = await Contract.countDocuments(query);
   const pagination = createPaginationInfo(parseInt(page), parseInt(limit), total);

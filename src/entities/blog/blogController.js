@@ -102,11 +102,11 @@ export const getAllBlogs = async (req, res) => {
     } = req.query;
 
     // ✅ create dynamic filter
-    const query = createFilter(req.query.search, req.query.date, "title");
+    const query = createFilter(search, date, "title");
 
     // Add extra filters if needed
-    // if (status) query.status = status;
-    // if (featured) query.featured = featured === "true";
+    if (status) query.status = status;
+    if (featured) query.featured = featured === "true";
 
     // ✅ pagination
     const skip = (page - 1) * limit;
