@@ -4,7 +4,6 @@ import {
   createContractService,
   getAllContractsService,
   getContractByIdService,
-  updateContractService,
   respondToContractService,
   deleteContractService,
 } from "./contract.service.js";
