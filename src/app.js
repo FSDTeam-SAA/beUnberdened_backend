@@ -16,6 +16,7 @@ import errorHandler from './core/middlewares/errorMiddleware.js';
 import notFound from './core/middlewares/notFound.js';
 import { globalLimiter } from './lib/limit.js';
 import appRouter from './core/app/appRouter.js';
+import listEndpoints from 'express-list-endpoints';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -61,6 +62,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 logger.info('Middleware stack initialized');
+// console.table(listEndpoints(app));
 
 export  { app }; 
 

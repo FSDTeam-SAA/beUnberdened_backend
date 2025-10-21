@@ -46,7 +46,7 @@ const profileSchema = new mongoose.Schema({
     fileType: {
       type: String,
       enum: ['image', 'video', 'audio', 'document'],
-      default: 'null',
+      default: 'image',
     },
     mimeType: {
       type: String,
