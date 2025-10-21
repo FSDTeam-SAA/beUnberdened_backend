@@ -42,7 +42,7 @@ export const createContract = async (req, res, next) => {
  */
 export const getAllContracts = async (req, res, next) => {
   try {
-    const { search, date, page = 1, limit = 10, sort = "-createdAt" } = req.query;
+    const { search, date, page = 1, limit = 10, sort = "-createdAt" , status} = req.query;
 
     const { contracts, pagination } = await getAllContractsService({
       search,
@@ -50,8 +50,8 @@ export const getAllContracts = async (req, res, next) => {
       page,
       limit,
       sort,
+      status
     });
-
     generateResponse(res, 200, true, "Contracts retrieved successfully", {
       contracts,
       pagination,
@@ -84,41 +84,6 @@ export const getContractById = async (req, res, next) => {
     next(error);
   }
 };
-
-/**
- * @desc    Update a contract
- * @route   PUT /api/v1/contracts/:id
- * @access  Private (Admin)
- */
-// export const updateContract = async (req, res, next) => {
-//   const { id } = req.params;
-//   const { fullName, email, phoneNumber, occupation, message, status } = req.body;
-
-//   try {
-//     if (!mongoose.Types.ObjectId.isValid(id)) {
-//       return generateResponse(res, 400, false, "Invalid contract ID", null);
-//     }
-
-//     const updatedContract = await updateContractService(id, {
-//       fullName,
-//       email,
-//       phoneNumber,
-//       occupation,
-//       message,
-//       status,
-//     });
-
-//     generateResponse(res, 200, true, "Contract updated successfully", updatedContract);
-//   } catch (error) {
-//     if (error.message === "Contract not found") {
-//       return generateResponse(res, 404, false, error.message, null);
-//     } else if (error.message.includes("Status must be")) {
-//       return generateResponse(res, 400, false, error.message, null);
-//     } else {
-//       next(error);
-//     }
-//   }
-// };
 
 /**
  * @desc    Respond to a contract

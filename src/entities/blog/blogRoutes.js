@@ -1,15 +1,15 @@
 import express from "express";
-import { verifyToken } from "../../core/middlewares/authMiddleware.js";
+import { adminMiddleware, verifyToken } from "../../core/middlewares/authMiddleware.js";
 import { createBlog, getAllBlogs, getBlogById, updateBlog, deleteBlog } from "./blogController.js";
 import { multerUpload } from '../../core/config/multer.js';
 
 const router = express.Router();
 
-router.post('/', verifyToken, multerUpload.single('uploadPhoto'), createBlog);
-router.get('/', verifyToken, getAllBlogs);
-router.get('/:id', getBlogById);
-router.put('/:id', verifyToken, multerUpload.single('uploadPhoto'), updateBlog);
-router.delete('/:id', verifyToken, deleteBlog);
+router.post('/', verifyToken, adminMiddleware, multerUpload.single('uploadPhoto'), createBlog);
+router.get('/', verifyToken, adminMiddleware, getAllBlogs);
+router.get('/:id', adminMiddleware, getBlogById);
+router.put('/:id', verifyToken, adminMiddleware, multerUpload.single('uploadPhoto'), updateBlog);
+router.delete('/:id', verifyToken, adminMiddleware, deleteBlog);
 
 
 router.get('/test', (req, res)=>{

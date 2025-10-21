@@ -2,6 +2,7 @@ import { generateResponse } from '../../lib/responseFormate.js';
 import  User  from '../auth/auth.model.js';
 import Blog from '../blog/blogModel.js';
 import Contract from '../contract/contract.model.js';
+import { getMonthlyActiveUsers } from './admin.service.js';
 
 const adminManagement = async(req, res) =>{
 
@@ -12,17 +13,27 @@ const adminManagement = async(req, res) =>{
 
 
 
-        generateResponse(res, 200, true, "Admin all data get successfully", {totalUsers, totalMessages, totalBlogs, messages})
+        generateResponse(res, 200, true, "Admin all data get successfully", {totalUsers, totalMessages, totalBlogs})
     }catch(error){
-        res.status(404).json({
-            success:false,
-            message:"Check error why not work",
-        })
+       generateResponse(res, 404, false, "Check error and fix them: ", error);
     }
-
-
-
 
 }
 
-export default adminManagement;
+const getMonthlyActiveUsersController =async (req, res) => {
+  try {
+    const { year } = req.query;
+    const selectedYear = year ? Number(year) : new Date().getFullYear();
+
+    const result = await getMonthlyActiveUsers(selectedYear);
+
+    generateResponse(res, 200, true, 'Monthly active users retrieved successfully', result);
+    } catch (error) {
+        console.error(error);
+        generateResponse(res, 500, false, 'Failed to retrieve monthly active users', error.message);
+    }
+    
+};
+
+
+export { adminManagement, getMonthlyActiveUsersController };

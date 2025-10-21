@@ -18,7 +18,6 @@ import {
   adminGetUserByIdController,
   adminUpdateUserController,
   adminDeleteUserController,
-  getMonthlyActiveUsersController
 } from './user.controller.js';
 import {
   adminMiddleware,
@@ -28,7 +27,7 @@ import express from 'express';
 
 const router = express.Router();
 
-router.get('/', getMonthlyActiveUsersController);
+// router.get('/', getMonthlyActiveUsersController);
 
 // Admin dashboard
 router.get('/all-users', verifyToken, adminMiddleware, getAllUsersController);
