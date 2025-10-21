@@ -19,7 +19,9 @@ import {
   deleteUserPDF,
   adminGetUserById,
   adminUpdateUser,
+
   adminDeleteUser
+, getMonthlyActiveUsers
 
 } from "./user.service.js";
 
@@ -257,6 +259,22 @@ export const deleteUserPDFController = async (req, res) => {
     console.error(error);
     generateResponse(res, 500, false, 'Failed to delete PDF', null);
   }
+};
+
+
+export const getMonthlyActiveUsersController =async (req, res) => {
+  try {
+    const { year } = req.query;
+  const selectedYear = year ? Number(year) : new Date().getFullYear();
+
+  const result = await getMonthlyActiveUsers(selectedYear);
+
+  generateResponse(res, 200, true, 'Monthly active users retrieved successfully', result);
+  } catch (error) {
+    console.error(error);
+    generateResponse(res, 500, false, 'Failed to retrieve monthly active users', error.message);
+  }
+  
 };
 
 
