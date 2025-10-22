@@ -6,8 +6,8 @@ import { multerUpload } from '../../core/config/multer.js';
 const router = express.Router();
 
 router.post('/', verifyToken, adminMiddleware, multerUpload.single('uploadPhoto'), createBlog);
-router.get('/', verifyToken, adminMiddleware, getAllBlogs);
-router.get('/:id', adminMiddleware, getBlogById);
+router.get('/', getAllBlogs);
+router.get('/:id', getBlogById);
 router.put('/:id', verifyToken, adminMiddleware, multerUpload.single('uploadPhoto'), updateBlog);
 router.delete('/:id', verifyToken, adminMiddleware, deleteBlog);
 

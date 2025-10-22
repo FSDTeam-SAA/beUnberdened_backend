@@ -6,12 +6,12 @@ const router = express.Router();
 
 router 
      .route('/')
-     .post(verifyToken, createContract)
-     .get(verifyToken, adminMiddleware, getAllContracts);
+     .post(createContract)
+     .get(getAllContracts);
 
 router 
       .route('/:id')
-      .get(verifyToken, adminMiddleware, getContractById)
+      .get(adminMiddleware, getContractById)
       .put(verifyToken, adminMiddleware, respondToContract)
       .delete(verifyToken, adminMiddleware, deleteContract);
 

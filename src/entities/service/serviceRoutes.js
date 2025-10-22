@@ -6,8 +6,8 @@ import { multerUpload } from '../../core/config/multer.js';
 const router = express.Router();
 
 router.post('/', verifyToken, adminMiddleware, multerUpload.single('uploadPhoto'), createService);
-router.get('/', verifyToken, adminMiddleware, getAllServices);
-router.get('/:id', adminMiddleware, getServiceById);
+router.get('/',  getAllServices);
+router.get('/:id', getServiceById);
 router.put('/:id', verifyToken, adminMiddleware, multerUpload.single('uploadPhoto'), updateService);
 router.delete('/:id', verifyToken, adminMiddleware, deleteService);
 
