@@ -5,6 +5,7 @@ import { createPodcast, getAllPodcasts, getPodcastById, updatePodcast, deletePod
 
 const router = express.Router();
 
+router.put('/:id', verifyToken, adminMiddleware, multerUpload.single('uploadThumbnail'), updatePodcast);
 
 router
       .route('/')
@@ -15,8 +16,8 @@ router
 router
      .route('/:id')
      .get(verifyToken, adminMiddleware, getPodcastById)
-     .put(verifyToken, adminMiddleware, multerUpload.single('uploadThumbnail', updatePodcast))
      .delete(verifyToken, adminMiddleware, deletePodcast);
+
 
 
 export default router;
