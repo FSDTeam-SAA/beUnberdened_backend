@@ -7,7 +7,7 @@ import uploadToCloudinary from "../../lib/uploadToCloudinary.js";
 
 const updateProfile = async (req, res, next) => {
   try {
-    const { fullName, email, phoneNumber, bio, userName } = req.body;
+    const { fullName, email, phoneNumber, bio, userName, occupation } = req.body;
     const userId = req.user.id;
 
     const user = await User.findById(userId);
@@ -34,6 +34,7 @@ const updateProfile = async (req, res, next) => {
     if (userName) profileFields.userName = userName;
     if (phoneNumber) profileFields.phoneNumber = phoneNumber;
     if (bio) profileFields.bio = bio;
+    if(occupation) profileFields.occupation = occupation;
 
     const updatedProfile = await Profile.findOneAndUpdate(
       { userId },

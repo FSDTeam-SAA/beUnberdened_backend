@@ -35,6 +35,10 @@ const profileSchema = new mongoose.Schema({
         type: String,
         default: "",
     },
+    occupation:{
+      type: String,
+      default: " "
+    },
      publicId: {
       type: String,
       default: null,

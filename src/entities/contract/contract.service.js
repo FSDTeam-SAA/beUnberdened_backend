@@ -39,10 +39,46 @@ export const getAllContractsService = async ({
   page = 1,
   limit = 10,
   sort = "-createdAt",
-  status,
 }) => {
-  const query = createFilter(search, date, "fullName");
-  if(status) query.status = status;
+ const query = {};
+
+  // Check if search term is a date format (YYYY-MM-DD)
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  const isDateSearch = dateRegex.test(search);
+
+  // Search across multiple columns
+  if (search && !isDateSearch) {
+    query.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { status: { $regex: search, $options: 'i' } },
+      { message: { $regex: search, $options: 'i'}},
+      { email: { $regex: search, $options: 'i'}},
+    ];
+  }
+
+  // If search term is a date, search by date
+  if (search && isDateSearch) {
+    const startDate = new Date(search);
+    const endDate = new Date(search);
+    endDate.setDate(endDate.getDate() + 1);
+    
+    query.createdAt = {
+      $gte: startDate,
+      $lt: endDate
+    };
+  }
+
+  // Separate date parameter (if you still want to support it)
+  if (date && !isDateSearch) {
+    const startDate = new Date(date);
+    const endDate = new Date(date);
+    endDate.setDate(endDate.getDate() + 1);
+    
+    query.createdAt = {
+      $gte: startDate,
+      $lt: endDate
+    };
+  }
   const skip = (page - 1) * limit;
 
   const contracts = await Contract.find(query)

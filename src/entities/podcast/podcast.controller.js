@@ -15,6 +15,7 @@ import {
  */
 export const createPodcast = async (req, res, next) => {
   const { title, mediaName, linkName, description, linkUrl } = req.body;
+  const podcastCreatorName = req.user.fullName;
 
   try {
     const podcast = await createPodcastService({
@@ -24,6 +25,7 @@ export const createPodcast = async (req, res, next) => {
       description,
       linkUrl,
       file: req.file,
+      podcastCreatorName,
     });
 
     generateResponse(res, 201, true, "Podcast created successfully", podcast);
@@ -43,7 +45,7 @@ export const createPodcast = async (req, res, next) => {
  */
 export const getAllPodcasts = async (req, res, next) => {
   try {
-    const { search, date, page = 1, limit = 10, sort = "-createdAt" } = req.query;
+    const { search, date, page = 1, limit = 10, sort = "-createdAt", mediaName } = req.query;
 
     const { podcasts, pagination } = await getAllPodcastsService({
       search,
@@ -51,6 +53,7 @@ export const getAllPodcasts = async (req, res, next) => {
       page,
       limit,
       sort,
+      mediaName
     });
 
     generateResponse(res, 200, true, "Podcasts retrieved successfully", {
