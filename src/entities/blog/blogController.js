@@ -105,7 +105,7 @@ export const getAllBlogs = async (req, res) => {
     const query = createFilter(search, date, "title");
 
     // Add extra filters if needed
-    if (status) query.status = status;npm 
+    if (status) query.status = status; 
     if (featured) query.featured = featured === "true";
 
     // ✅ pagination
