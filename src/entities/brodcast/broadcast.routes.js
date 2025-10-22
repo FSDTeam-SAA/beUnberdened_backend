@@ -17,7 +17,7 @@ const router = express.Router();
 
 
 //subscribe routes
-router.post('/subscribe', verifyToken, createSubscriber);
+router.post('/subscribe', createSubscriber);
 router.get('/subscribe', verifyToken, adminMiddleware, getAllSubscribers);
 router.get('/subscribe/:id', verifyToken, adminMiddleware, getSubscriberById);
 router.delete('/subscribe/:id', verifyToken, adminMiddleware, deleteSubscriber);
