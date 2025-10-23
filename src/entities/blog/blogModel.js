@@ -31,11 +31,19 @@ const blogSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    blogCreatorName:{
+      type:String,
+      default: " "
+    },
+    tags:{
+      type:String,
+      default:[]
+    },
 
     status: {
       type: String,
-      enum: ["published", "draft", "pending"],
-      default: "pending",
+      enum: ["Published", "Draft", "Pending"],
+      default: "Pending",
     },
      publicId: {
       type: String,

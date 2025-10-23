@@ -12,23 +12,17 @@ import { createFilter, createPaginationInfo} from "../../lib/pagination.js";
  */
 export const createBlog = async (req, res) => {
   try {
-    const { title, readTime, description } = req.body;
+    const { title, readTime, description, tags } = req.body;
 
-    // Validate required fields
-    if (!title || !description) {
-      return res.status(400).json({ error: 'Title and description are required' });
-    }
-
-    // Check if file exists
-    // if (!req.file) {
-    //   return res.status(400).json({ error: 'No file uploaded' });
-    // }
+    const blogCreatorName = req.user.fullName; 
 
     // Create blog document without image first
     const blog = new Blog({
       title,
       readTime: readTime || 0,
       description,
+      blogCreatorName,
+      tags,
     });
 
     const savedBlog = await blog.save();
@@ -94,20 +88,49 @@ export const getAllBlogs = async (req, res) => {
     const { 
       search, 
       date, 
-      status, 
-      featured, 
       page = 1, 
       limit = 10, 
       sort = "-createdAt" 
     } = req.query;
 
-    // ✅ create dynamic filter
-    const query = createFilter(search, date, "title");
+  const query = {};
 
-    // Add extra filters if needed
-    if (status) query.status = status; 
-    if (featured) query.featured = featured === "true";
+  // Check if search term is a date format (YYYY-MM-DD)
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  const isDateSearch = dateRegex.test(search);
 
+  // Search across multiple columns
+  if (search && !isDateSearch) {
+    query.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { status: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i'}},
+    ];
+  }
+
+  // If search term is a date, search by date
+  if (search && isDateSearch) {
+    const startDate = new Date(search);
+    const endDate = new Date(search);
+    endDate.setDate(endDate.getDate() + 1);
+    
+    query.createdAt = {
+      $gte: startDate,
+      $lt: endDate
+    };
+  }
+
+  // Separate date parameter (if you still want to support it)
+  if (date && !isDateSearch) {
+    const startDate = new Date(date);
+    const endDate = new Date(date);
+    endDate.setDate(endDate.getDate() + 1);
+    
+    query.createdAt = {
+      $gte: startDate,
+      $lt: endDate
+    };
+  }
     // ✅ pagination
     const skip = (page - 1) * limit;
 
@@ -175,7 +198,7 @@ export const getBlogById = async (req, res) => {
  */
 export const updateBlog = async (req, res) => {
   try {
-    const { title, readTime, description } = req.body;
+    const { title, readTime, description, status } = req.body;
 
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -191,6 +214,7 @@ export const updateBlog = async (req, res) => {
     if (title) blog.title = title;
     if (readTime) blog.readTime = readTime;
     if (description) blog.description = description;
+    if(status) blog.status = status;
 
     // Handle file upload if provided
     if (req.file) {
@@ -238,6 +262,13 @@ export const updateBlog = async (req, res) => {
           details: uploadError.message,
         });
       }
+    }
+
+    if (blog.status === "Published") {
+      blog.featured = true;
+    }
+    else{
+      blog.featured = false;
     }
 
     // Save updated blog

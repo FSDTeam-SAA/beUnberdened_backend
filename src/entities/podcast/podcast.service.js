@@ -14,6 +14,7 @@ export const createPodcastService = async ({
   description,
   linkUrl,
   file,
+  podcastCreatorName,
 }) => {
   const podcast = new Podcast({
     title,
@@ -21,6 +22,7 @@ export const createPodcastService = async ({
     linkName,
     description: description || "",
     linkUrl: linkUrl || "",
+    podcastCreatorName,
   });
 
   const savedPodcast = await podcast.save();
@@ -57,8 +59,57 @@ export const createPodcastService = async ({
 /**
  * @desc    Get all podcasts with pagination and filters service
  */
-export const getAllPodcastsService = async ({ search, date, page = 1, limit = 10, sort = "-createdAt" }) => {
-  const query = createFilter(search, date, "title");
+export const getAllPodcastsService = async ({ search, date, page = 1, limit = 10, sort = "-createdAt", mediaName}) => {
+
+    const query = {};
+
+  // Check if search term is a date format (YYYY-MM-DD)
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  const isDateSearch = dateRegex.test(search);
+
+  // Search across multiple columns
+  if (search && !isDateSearch) {
+    query.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { mediaName: { $regex: search, $options: 'i' } },
+      { linkName: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } },
+      { linkUrl: { $regex: search, $options: 'i' } },
+      { podcastCreatorName: { $regex: search, $options: 'i' } }
+    ];
+  }
+
+  // If search term is a date, search by date
+  if (search && isDateSearch) {
+    const startDate = new Date(search);
+    const endDate = new Date(search);
+    endDate.setDate(endDate.getDate() + 1);
+    
+    query.createdAt = {
+      $gte: startDate,
+      $lt: endDate
+    };
+  }
+
+  // Filter by specific mediaName
+  if (mediaName) {
+    query.mediaName = { $regex: mediaName, $options: 'i' };
+  }
+
+  // Separate date parameter (if you still want to support it)
+  if (date && !isDateSearch) {
+    const startDate = new Date(date);
+    const endDate = new Date(date);
+    endDate.setDate(endDate.getDate() + 1);
+    
+    query.createdAt = {
+      $gte: startDate,
+      $lt: endDate
+    };
+  }
+  // const query = createFilter(search, date, "title");
+  // if (mediaName) query.mediaName = { $regex: mediaName, $options: "i" }
+
   const skip = (page - 1) * limit;
 
   const podcasts = await Podcast.find(query)

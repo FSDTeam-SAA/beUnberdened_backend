@@ -12,8 +12,8 @@ const podcastSchema = new mongoose.Schema(
 
     mediaName: {
       type: String,
-      required: [true, "Media Name is required"],
-      trim: true,
+      enum: ['Youtube Videos', 'Spotify Audios'],
+      default: 'Youtube Videos',
     },
 
     description: {
@@ -32,6 +32,10 @@ const podcastSchema = new mongoose.Schema(
     linkUrl:{
         type:String,
         default: " "
+    },
+    podcastCreatorName:{
+      type:String,
+      default: " "
     },
      publicId: {
       type: String,
