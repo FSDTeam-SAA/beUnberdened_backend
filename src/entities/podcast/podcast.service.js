@@ -59,7 +59,7 @@ export const createPodcastService = async ({
 /**
  * @desc    Get all podcasts with pagination and filters service
  */
-export const getAllPodcastsService = async ({ search, date, page = 1, limit = 10, sort = "-createdAt", mediaName}) => {
+export const getAllPodcastsService = async ({ search, date, page = 1, limit = 4, sort = "-createdAt", mediaName}) => {
 
     const query = {};
 

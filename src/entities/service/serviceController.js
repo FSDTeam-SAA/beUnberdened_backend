@@ -89,7 +89,7 @@ export const getAllServices = async (req, res) => {
       search, 
       date, 
       page = 1, 
-      limit = 10, 
+      limit = 4, 
       sort = "-createdAt" 
     } = req.query;
 

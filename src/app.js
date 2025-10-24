@@ -58,7 +58,7 @@ app.use(notFound);
 // Set up error handling middleware
 app.use(errorHandler);
 
-logger.info('Middleware stack initialized');
+// logger.info('Middleware stack initialized');
 // console.table(listEndpoints(app));
 
 export  { app }; 
