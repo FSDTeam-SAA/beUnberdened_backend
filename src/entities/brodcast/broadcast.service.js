@@ -28,7 +28,7 @@ export const getAllSubscribersService = async ({
   search,
   date,
   page = 1,
-  limit = 10,
+  limit = 4,
   sort = "-createdAt",
 }) => {
   const query = createFilter(search, date, "email");

@@ -37,7 +37,7 @@ export const getAllContractsService = async ({
   search,
   date,
   page = 1,
-  limit = 10,
+  limit = 4,
   sort = "-createdAt",
 }) => {
  const query = {};
