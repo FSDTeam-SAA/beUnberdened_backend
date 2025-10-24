@@ -4,10 +4,10 @@ const podcastSchema = new mongoose.Schema(
     {
      title: {
       type: String,
-      required: [true, "Blog title is required"],
       trim: true,
       minlength: [3, "Title must be at least 3 characters long"],
       maxlength: [200, "Title must be less than 200 characters"],
+      default: " ",
     },
 
     mediaName: {
@@ -27,7 +27,7 @@ const podcastSchema = new mongoose.Schema(
     },
     linkName:{
         type:String,
-        required:[true, "link name is required"]
+        default: " "
     },
     linkUrl:{
         type:String,
