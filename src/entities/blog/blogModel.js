@@ -36,14 +36,13 @@ const blogSchema = new mongoose.Schema(
       default: ' '
     },
     tags: {
-      type: String,
+      type: [String],
       default: []
     },
-
     status: {
       type: String,
-      enum: ['published', 'draft', 'pending'], // all lowercase for consistency
-      default: 'pending'
+      enum: ['Published', 'Draft', 'Pending'], // all lowercase for consistency
+      default: 'Pending'
     },
     publicId: {
       type: String,

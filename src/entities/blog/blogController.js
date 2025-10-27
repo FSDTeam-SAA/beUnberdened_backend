@@ -1,9 +1,9 @@
-import Blog from "./blogModel.js";
-import { getFileType, getResourceType } from "../../lib/fileTypeDetector.js";
-import uploadToCloudinary from "../../lib/uploadToCloudinary.js";
-import mongoose from "mongoose";
-import cloudinary from "../../core/config/cloudinary.js";
-import { createFilter, createPaginationInfo} from "../../lib/pagination.js";
+import Blog from './blogModel.js';
+import { getFileType, getResourceType } from '../../lib/fileTypeDetector.js';
+import uploadToCloudinary from '../../lib/uploadToCloudinary.js';
+import mongoose from 'mongoose';
+import cloudinary from '../../core/config/cloudinary.js';
+import { createFilter, createPaginationInfo } from '../../lib/pagination.js';
 
 /**
  * @desc    Create a new blog
@@ -14,7 +14,7 @@ export const createBlog = async (req, res) => {
   try {
     const { title, readTime, description, tags } = req.body;
 
-    const blogCreatorName = req.user.fullName; 
+    const blogCreatorName = req.user.fullName;
 
     // Create blog document without image first
     const blog = new Blog({
@@ -22,58 +22,56 @@ export const createBlog = async (req, res) => {
       readTime: readTime || 0,
       description,
       blogCreatorName,
-      tags,
+      tags
     });
 
     const savedBlog = await blog.save();
 
     try {
-     if(req.file){
-      // Detect file type
-      const fileType = getFileType(req.file.mimetype, req.file.originalname);
-      const resourceType = getResourceType(fileType);
+      if (req.file) {
+        // Detect file type
+        const fileType = getFileType(req.file.mimetype, req.file.originalname);
+        const resourceType = getResourceType(fileType);
 
-      // Upload to Cloudinary directly from buffer (NO LOCAL STORAGE)
-      const result = await uploadToCloudinary(
-        req.file.buffer,
-        req.file.originalname,
-        'blog-images'
-      );
+        // Upload to Cloudinary directly from buffer (NO LOCAL STORAGE)
+        const result = await uploadToCloudinary(
+          req.file.buffer,
+          req.file.originalname,
+          'blog-images'
+        );
 
-      // Update blog with Cloudinary data
-      savedBlog.uploadPhoto = result.secure_url;
-      savedBlog.publicId = result.public_id;
-      savedBlog.cloudinaryId = result.public_id;
-      savedBlog.fileType = fileType;
-      savedBlog.mimeType = req.file.mimetype;
-      savedBlog.fileSize = req.file.size;
-      savedBlog.filename = req.file.originalname;
-      savedBlog.uploadedAt = new Date();
+        // Update blog with Cloudinary data
+        savedBlog.uploadPhoto = result.secure_url;
+        savedBlog.publicId = result.public_id;
+        savedBlog.cloudinaryId = result.public_id;
+        savedBlog.fileType = fileType;
+        savedBlog.mimeType = req.file.mimetype;
+        savedBlog.fileSize = req.file.size;
+        savedBlog.filename = req.file.originalname;
+        savedBlog.uploadedAt = new Date();
 
-      await savedBlog.save();
-    }
+        await savedBlog.save();
+      }
 
       return res.status(201).json({
         success: true,
         message: 'Blog created successfully',
-        blog: savedBlog,
+        blog: savedBlog
       });
-
     } catch (uploadError) {
       // If upload fails, delete the blog document
       await Blog.findByIdAndDelete(savedBlog._id);
       console.error('Upload error:', uploadError);
       return res.status(500).json({
         error: 'Failed to upload file to Cloudinary',
-        details: uploadError.message,
+        details: uploadError.message
       });
-  }
-
+    }
   } catch (error) {
     console.error('Create blog error:', error);
-    return res.status(500).json({ 
-      message: 'Server error', 
-      error: error.message 
+    return res.status(500).json({
+      message: 'Server error',
+      error: error.message
     });
   }
 };
@@ -85,52 +83,52 @@ export const createBlog = async (req, res) => {
  */
 export const getAllBlogs = async (req, res) => {
   try {
-    const { 
-      search, 
-      date, 
-      page = 1, 
-      limit = 4, 
-      sort = "-createdAt" 
+    const {
+      search,
+      date,
+      page = 1,
+      limit = 4,
+      sort = '-createdAt'
     } = req.query;
 
-  const query = {};
+    const query = {};
 
-  // Check if search term is a date format (YYYY-MM-DD)
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  const isDateSearch = dateRegex.test(search);
+    // Check if search term is a date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    const isDateSearch = dateRegex.test(search);
 
-  // Search across multiple columns
-  if (search && !isDateSearch) {
-    query.$or = [
-      { title: { $regex: search, $options: 'i' } },
-      { status: { $regex: search, $options: 'i' } },
-      { description: { $regex: search, $options: 'i'}},
-    ];
-  }
+    // Search across multiple columns
+    if (search && !isDateSearch) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { status: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
 
-  // If search term is a date, search by date
-  if (search && isDateSearch) {
-    const startDate = new Date(search);
-    const endDate = new Date(search);
-    endDate.setDate(endDate.getDate() + 1);
-    
-    query.createdAt = {
-      $gte: startDate,
-      $lt: endDate
-    };
-  }
+    // If search term is a date, search by date
+    if (search && isDateSearch) {
+      const startDate = new Date(search);
+      const endDate = new Date(search);
+      endDate.setDate(endDate.getDate() + 1);
 
-  // Separate date parameter (if you still want to support it)
-  if (date && !isDateSearch) {
-    const startDate = new Date(date);
-    const endDate = new Date(date);
-    endDate.setDate(endDate.getDate() + 1);
-    
-    query.createdAt = {
-      $gte: startDate,
-      $lt: endDate
-    };
-  }
+      query.createdAt = {
+        $gte: startDate,
+        $lt: endDate
+      };
+    }
+
+    // Separate date parameter (if you still want to support it)
+    if (date && !isDateSearch) {
+      const startDate = new Date(date);
+      const endDate = new Date(date);
+      endDate.setDate(endDate.getDate() + 1);
+
+      query.createdAt = {
+        $gte: startDate,
+        $lt: endDate
+      };
+    }
     // ✅ pagination
     const skip = (page - 1) * limit;
 
@@ -142,18 +140,22 @@ export const getAllBlogs = async (req, res) => {
     const total = await Blog.countDocuments(query);
 
     // ✅ create pagination info
-    const pagination = createPaginationInfo(parseInt(page), parseInt(limit), total);
+    const pagination = createPaginationInfo(
+      parseInt(page),
+      parseInt(limit),
+      total
+    );
 
     return res.status(200).json({
       success: true,
       pagination,
-      blogs,
+      blogs
     });
   } catch (error) {
-    console.error("Get all blogs error:", error);
+    console.error('Get all blogs error:', error);
     return res.status(500).json({
-      message: "Server error",
-      error: error.message,
+      message: 'Server error',
+      error: error.message
     });
   }
 };
@@ -180,13 +182,13 @@ export const getBlogById = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Blog retrieved successfully',
-      blog,
+      blog
     });
   } catch (error) {
     console.error('Get blog by ID error:', error);
-    return res.status(500).json({ 
-      message: 'Server error', 
-      error: error.message 
+    return res.status(500).json({
+      message: 'Server error',
+      error: error.message
     });
   }
 };
@@ -198,7 +200,7 @@ export const getBlogById = async (req, res) => {
  */
 export const updateBlog = async (req, res) => {
   try {
-    const { title, readTime, description, status } = req.body;
+    const { title, readTime, description, status, tags } = req.body;
 
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -214,7 +216,8 @@ export const updateBlog = async (req, res) => {
     if (title) blog.title = title;
     if (readTime) blog.readTime = readTime;
     if (description) blog.description = description;
-    if(status) blog.status = status;
+    if (status) blog.status = status;
+    if (tags) blog.tags = tags;
 
     // Handle file upload if provided
     if (req.file) {
@@ -222,12 +225,13 @@ export const updateBlog = async (req, res) => {
         // Delete old file from Cloudinary if it exists
         if (blog.publicId) {
           try {
-            const fileType = blog.fileType || getFileType(blog.mimeType, blog.filename);
+            const fileType =
+              blog.fileType || getFileType(blog.mimeType, blog.filename);
             const resourceType = getResourceType(fileType);
 
             await cloudinary.uploader.destroy(blog.publicId, {
               resource_type: resourceType,
-              invalidate: true,
+              invalidate: true
             });
           } catch (error) {
             console.error('Error deleting old file from Cloudinary:', error);
@@ -254,20 +258,18 @@ export const updateBlog = async (req, res) => {
         blog.fileSize = req.file.size;
         blog.filename = req.file.originalname;
         blog.uploadedAt = new Date();
-
       } catch (uploadError) {
         console.error('Upload error:', uploadError);
         return res.status(500).json({
           error: 'Failed to upload file to Cloudinary',
-          details: uploadError.message,
+          details: uploadError.message
         });
       }
     }
 
-    if (blog.status === "Published") {
+    if (blog.status === 'Published') {
       blog.featured = true;
-    }
-    else{
+    } else {
       blog.featured = false;
     }
 
@@ -277,14 +279,13 @@ export const updateBlog = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Blog updated successfully',
-      blog: updatedBlog,
+      blog: updatedBlog
     });
-
   } catch (error) {
     console.error('Update blog error:', error);
-    return res.status(500).json({ 
-      message: 'Server error', 
-      error: error.message 
+    return res.status(500).json({
+      message: 'Server error',
+      error: error.message
     });
   }
 };
@@ -314,7 +315,7 @@ export const deleteBlog = async (req, res) => {
 
         await cloudinary.uploader.destroy(blog.publicId, {
           resource_type: resourceType,
-          invalidate: true,
+          invalidate: true
         });
       } catch (error) {
         console.error('Error deleting file from Cloudinary:', error);
@@ -326,14 +327,13 @@ export const deleteBlog = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Blog deleted successfully',
+      message: 'Blog deleted successfully'
     });
-
   } catch (error) {
     console.error('Delete blog error:', error);
-    return res.status(500).json({ 
-      message: 'Server error', 
-      error: error.message 
+    return res.status(500).json({
+      message: 'Server error',
+      error: error.message
     });
   }
 };
