@@ -1,79 +1,79 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const blogSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: [true, "Blog title is required"],
+      required: [true, 'Blog title is required'],
       trim: true,
-      minlength: [3, "Title must be at least 3 characters long"],
-      maxlength: [200, "Title must be less than 200 characters"],
+      minlength: [3, 'Title must be at least 3 characters long'],
+      maxlength: [200, 'Title must be less than 200 characters']
     },
 
     readTime: {
       type: String,
-      required: [true, "Read time is required"],
-      trim: true,
+      required: [true, 'Read time is required'],
+      trim: true
     },
 
     description: {
       type: String,
-      required: [true, "Blog description is required"],
-      minlength: [10, "Description must be at least 10 characters long"],
+      required: [true, 'Blog description is required'],
+      minlength: [10, 'Description must be at least 10 characters long']
     },
 
     uploadPhoto: {
       type: String, // URL or file path of the uploaded image
-      default: "",
+      default: ''
     },
 
     featured: {
       type: Boolean,
-      default: false,
+      default: false
     },
-    blogCreatorName:{
-      type:String,
-      default: " "
+    blogCreatorName: {
+      type: String,
+      default: ' '
     },
-    tags:{
-      type:String,
-      default:[]
+    tags: {
+      type: String,
+      default: []
     },
 
     status: {
       type: String,
-      enum: ["Published", "Draft", "Pending"],
-      default: "Pending",
+      enum: ['published', 'draft', 'pending'], // all lowercase for consistency
+      default: 'pending'
     },
-     publicId: {
+    publicId: {
       type: String,
-      default: null,
+      default: null
     },
     cloudinaryId: {
       type: String,
-      default: null,
+      default: null
     },
     fileType: {
       type: String,
       enum: ['image', 'video', 'audio', 'document'],
-      default: 'image',
+      default: 'image'
     },
     mimeType: {
       type: String,
-      default: null,
+      default: null
     },
     fileSize: {
       type: Number,
-      default: null,
+      default: null
     },
     uploadedAt: {
       type: Date,
-      default: null,
-    },
+      default: null
+    }
   },
   {
     timestamps: true, // Adds createdAt and updatedAt fields
-    versionKey: false,
+    versionKey: false
   }
 );
 
