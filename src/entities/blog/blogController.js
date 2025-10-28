@@ -88,52 +88,58 @@ export const getAllBlogs = async (req, res) => {
     const { 
       search, 
       date, 
+      status,   // ✅ new filter added
       page = 1, 
       limit = 4, 
       sort = "-createdAt" 
     } = req.query;
 
-  const query = {};
+    const query = {};
 
-  // Check if search term is a date format (YYYY-MM-DD)
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  const isDateSearch = dateRegex.test(search);
+    // ✅ 1. Search filter (title, status, description)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    const isDateSearch = dateRegex.test(search);
 
-  // Search across multiple columns
-  if (search && !isDateSearch) {
-    query.$or = [
-      { title: { $regex: search, $options: 'i' } },
-      { status: { $regex: search, $options: 'i' } },
-      { description: { $regex: search, $options: 'i'}},
-    ];
-  }
+    if (search && !isDateSearch) {
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { status: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
 
-  // If search term is a date, search by date
-  if (search && isDateSearch) {
-    const startDate = new Date(search);
-    const endDate = new Date(search);
-    endDate.setDate(endDate.getDate() + 1);
-    
-    query.createdAt = {
-      $gte: startDate,
-      $lt: endDate
-    };
-  }
+    // ✅ 2. Date filter (if search term is a date)
+    if (search && isDateSearch) {
+      const startDate = new Date(search);
+      const endDate = new Date(search);
+      endDate.setDate(endDate.getDate() + 1);
 
-  // Separate date parameter (if you still want to support it)
-  if (date && !isDateSearch) {
-    const startDate = new Date(date);
-    const endDate = new Date(date);
-    endDate.setDate(endDate.getDate() + 1);
-    
-    query.createdAt = {
-      $gte: startDate,
-      $lt: endDate
-    };
-  }
-    // ✅ pagination
+      query.createdAt = {
+        $gte: startDate,
+        $lt: endDate,
+      };
+    }
+
+    // ✅ 3. Separate `date` parameter filter
+    if (date && !isDateSearch) {
+      const startDate = new Date(date);
+      const endDate = new Date(date);
+      endDate.setDate(endDate.getDate() + 1);
+
+      query.createdAt = {
+        $gte: startDate,
+        $lt: endDate,
+      };
+    }
+
+    if (status) {
+      // Case-insensitive match (e.g., Published, published, PUBLISHED)
+      query.status = { $regex: `^${status}$`, $options: "i" };
+    }
+    // ✅ 5. Pagination setup
     const skip = (page - 1) * limit;
 
+    // ✅ 6. Execute query with sorting, skip & limit
     const blogs = await Blog.find(query)
       .sort(sort)
       .skip(skip)
@@ -141,9 +147,14 @@ export const getAllBlogs = async (req, res) => {
 
     const total = await Blog.countDocuments(query);
 
-    // ✅ create pagination info
-    const pagination = createPaginationInfo(parseInt(page), parseInt(limit), total);
+    // ✅ 7. Pagination info
+    const pagination = createPaginationInfo(
+      parseInt(page),
+      parseInt(limit),
+      total
+    );
 
+    // ✅ 8. Final response
     return res.status(200).json({
       success: true,
       pagination,
