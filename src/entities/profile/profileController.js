@@ -115,11 +115,22 @@ const updateProfileImage = async (req, res) => {
   try {
     const userId = req.params.id || req.user.id;
 
+    // console.log("mahabur", userId);
+
+    // Find both user and profile
+    const user = await User.findById(userId);
+    console.log(user);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     const profile = await Profile.findOne({ userId });
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
 
+    // console.log("profiue", profile);
     // Check if file exists before processing
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -152,9 +163,12 @@ const updateProfileImage = async (req, res) => {
       'profile-images'
     );
 
-    console.log('Upload result:', result);
-
     // Update profile with Cloudinary URL only
+
+    // Update User model (only profileImage field exists in User schema)
+    user.profileImage = result.secure_url;
+    await user.save();
+
     profile.profileImage = result.secure_url;
     profile.publicId = result.public_id;
     profile.cloudinaryId = result.public_id;
@@ -162,7 +176,6 @@ const updateProfileImage = async (req, res) => {
     profile.mimeType = req.file.mimetype;
     profile.fileSize = req.file.size;
     profile.uploadedAt = new Date();
-
     await profile.save();
 
     console.log(profile);
@@ -189,7 +202,6 @@ const updateProfileImage = async (req, res) => {
       .json({ error: error.message || 'Failed to update profile image' });
   }
 };
-
 const deleteProfileImage = async (req, res) => {
   try {
     const userId = req.params.id || req.user.id;
