@@ -1,13 +1,14 @@
-import User from "../auth/auth.model.js";
-import Profile from "./profileModel.js";
-import mongoose from "mongoose";
-import cloudinary from "../../core/config/cloudinary.js";
-import { getFileType, getResourceType } from "../../lib/fileTypeDetector.js";
-import uploadToCloudinary from "../../lib/uploadToCloudinary.js";
+import User from '../auth/auth.model.js';
+import Profile from './profileModel.js';
+import mongoose from 'mongoose';
+import cloudinary from '../../core/config/cloudinary.js';
+import { getFileType, getResourceType } from '../../lib/fileTypeDetector.js';
+import uploadToCloudinary from '../../lib/uploadToCloudinary.js';
 
 const updateProfile = async (req, res, next) => {
   try {
-    const { fullName, email, phoneNumber, bio, userName, occupation } = req.body;
+    const { fullName, email, phoneNumber, bio, userName, occupation } =
+      req.body;
     const userId = req.user.id;
 
     const user = await User.findById(userId);
@@ -34,7 +35,7 @@ const updateProfile = async (req, res, next) => {
     if (userName) profileFields.userName = userName;
     if (phoneNumber) profileFields.phoneNumber = phoneNumber;
     if (bio) profileFields.bio = bio;
-    if(occupation) profileFields.occupation = occupation;
+    if (occupation) profileFields.occupation = occupation;
 
     const updatedProfile = await Profile.findOneAndUpdate(
       { userId },
@@ -48,12 +49,14 @@ const updateProfile = async (req, res, next) => {
         // Delete old file from Cloudinary if it exists
         if (updatedProfile.publicId) {
           try {
-            const fileType = updatedProfile.fileType || getFileType(updatedProfile.mimeType, updatedProfile.filename);
+            const fileType =
+              updatedProfile.fileType ||
+              getFileType(updatedProfile.mimeType, updatedProfile.filename);
             const resourceType = getResourceType(fileType);
 
             await cloudinary.uploader.destroy(updatedProfile.publicId, {
               resource_type: resourceType,
-              invalidate: true,
+              invalidate: true
             });
           } catch (error) {
             console.error('Error deleting old file from Cloudinary:', error);
@@ -83,11 +86,12 @@ const updateProfile = async (req, res, next) => {
 
         await updatedProfile.save();
 
+        console.log('Updated profile:', updatedProfile);
       } catch (uploadError) {
         console.error('Upload error:', uploadError);
         return res.status(500).json({
           error: 'Failed to upload file to Cloudinary',
-          details: uploadError.message,
+          details: uploadError.message
         });
       }
     }
@@ -96,14 +100,13 @@ const updateProfile = async (req, res, next) => {
       success: true,
       message: 'Profile updated successfully',
       user: updatedUser,
-      profile: updatedProfile,
+      profile: updatedProfile
     });
-
   } catch (error) {
     console.error('Profile update error:', error);
-    return res.status(500).json({ 
-      message: 'Server error', 
-      error: error.message 
+    return res.status(500).json({
+      message: 'Server error',
+      error: error.message
     });
   }
 };
@@ -111,7 +114,7 @@ const updateProfile = async (req, res, next) => {
 const updateProfileImage = async (req, res) => {
   try {
     const userId = req.params.id || req.user.id;
-    
+
     const profile = await Profile.findOne({ userId });
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
@@ -125,12 +128,13 @@ const updateProfileImage = async (req, res) => {
     // Delete old file from Cloudinary if it exists
     if (profile.publicId) {
       try {
-        const fileType = profile.fileType || getFileType(profile.mimeType, profile.filename);
+        const fileType =
+          profile.fileType || getFileType(profile.mimeType, profile.filename);
         const resourceType = getResourceType(fileType);
-        
+
         await cloudinary.uploader.destroy(profile.publicId, {
           resource_type: resourceType,
-          invalidate: true,
+          invalidate: true
         });
       } catch (error) {
         console.error('Error deleting old file from Cloudinary:', error);
@@ -148,6 +152,8 @@ const updateProfileImage = async (req, res) => {
       'profile-images'
     );
 
+    console.log('Upload result:', result);
+
     // Update profile with Cloudinary URL only
     profile.profileImage = result.secure_url;
     profile.publicId = result.public_id;
@@ -158,6 +164,8 @@ const updateProfileImage = async (req, res) => {
     profile.uploadedAt = new Date();
 
     await profile.save();
+
+    console.log(profile);
 
     res.status(200).json({
       message: 'Profile image updated successfully',
@@ -171,19 +179,21 @@ const updateProfileImage = async (req, res) => {
         fullName: profile.fullName,
         email: profile.email,
         bio: profile.bio,
-        phoneNumber: profile.phoneNumber,
-      },
+        phoneNumber: profile.phoneNumber
+      }
     });
   } catch (error) {
     console.error('Error in updateProfileImage:', error);
-    res.status(500).json({ error: error.message || 'Failed to update profile image' });
+    res
+      .status(500)
+      .json({ error: error.message || 'Failed to update profile image' });
   }
 };
 
 const deleteProfileImage = async (req, res) => {
   try {
     const userId = req.params.id || req.user.id;
-    
+
     const profile = await Profile.findOne({ userId });
 
     if (!profile) {
@@ -195,10 +205,10 @@ const deleteProfileImage = async (req, res) => {
       try {
         const fileType = profile.fileType || 'image';
         const resourceType = getResourceType(fileType);
-        
+
         await cloudinary.uploader.destroy(profile.publicId, {
           resource_type: resourceType,
-          invalidate: true,
+          invalidate: true
         });
       } catch (error) {
         console.error('Error deleting file from Cloudinary:', error);
@@ -224,12 +234,14 @@ const deleteProfileImage = async (req, res) => {
         profileImage: profile.profileImage,
         fullName: profile.fullName,
         email: profile.email,
-        bio: profile.bio,
-      },
+        bio: profile.bio
+      }
     });
   } catch (error) {
     console.error('Error in deleteProfileImage:', error);
-    res.status(500).json({ error: error.message || 'Failed to delete profile image' });
+    res
+      .status(500)
+      .json({ error: error.message || 'Failed to delete profile image' });
   }
 };
 
@@ -245,7 +257,9 @@ const deleteProfile = async (req, res, next) => {
     if (!profile) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ success: false, message: "Profile not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: 'Profile not found' });
     }
 
     // Delete from Cloudinary if image exists
@@ -253,10 +267,10 @@ const deleteProfile = async (req, res, next) => {
       try {
         const fileType = profile.fileType || 'image';
         const resourceType = getResourceType(fileType);
-        
+
         await cloudinary.uploader.destroy(profile.publicId, {
           resource_type: resourceType,
-          invalidate: true,
+          invalidate: true
         });
       } catch (error) {
         console.error('Error deleting file from Cloudinary:', error);
@@ -268,7 +282,9 @@ const deleteProfile = async (req, res, next) => {
     if (!user) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: 'User not found' });
     }
 
     await session.commitTransaction();
@@ -276,49 +292,45 @@ const deleteProfile = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: "User and profile deleted successfully",
-      data: { userId, profileId: profile._id },
+      message: 'User and profile deleted successfully',
+      data: { userId, profileId: profile._id }
     });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    console.error("Delete profile error:", error);
-    return res.status(500).json({ success: false, message: "Server error", error: error.message });
+    console.error('Delete profile error:', error);
+    return res
+      .status(500)
+      .json({ success: false, message: 'Server error', error: error.message });
   }
 };
 
 const getProfile = async (req, res) => {
   try {
     const userId = req.params.id || req.user.id;
-    
+
     const profile = await Profile.findOne({ userId });
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
 
+    console.log(profile);
+
     res.status(200).json({
       message: 'Profile retrieved successfully',
-      data: {
-        _id: profile._id,
-        userId: profile.userId,
-        profileImage: profile.profileImage,
-        fullName: profile.fullName,
-        email: profile.email,
-        bio: profile.bio,
-        phoneNumber: profile.phoneNumber,
-        fileType: profile.fileType,
-        uploadedAt: profile.uploadedAt,
-      },
+      data: profile
     });
   } catch (error) {
     console.error('Error in getProfile:', error);
-    res.status(500).json({ error: error.message || 'Failed to retrieve profile' });
+    res
+      .status(500)
+      .json({ error: error.message || 'Failed to retrieve profile' });
   }
 };
 
-export { 
-  updateProfile, 
-  getProfile, 
+export {
+  updateProfile,
+  getProfile,
   deleteProfile,
   updateProfileImage,
   deleteProfileImage
