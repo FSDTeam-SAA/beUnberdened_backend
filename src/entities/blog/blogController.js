@@ -137,7 +137,7 @@ export const getAllBlogs = async (req, res) => {
     // ✅ 5. Pagination setup
     const skip = (page - 1) * limit;
 
-    // ✅ 6. Execute query with sorting, skip & limit
+  
     const blogs = await Blog.find(query)
       .sort(sort)
       .skip(skip)
