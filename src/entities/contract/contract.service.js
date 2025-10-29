@@ -1,7 +1,7 @@
 import Contract from "./contract.model.js";
 import { createFilter, createPaginationInfo } from "../../lib/pagination.js";
 import sendEmail from "../../lib/sendEmail.js";
-import contractResponseTemplate from "../../lib/emailTemplates.js";
+import { getContractResponseTemplate } from "../../lib/emailTemplates.js";
 
 /**
  * @desc    Create a new contract service
@@ -141,26 +141,42 @@ export const respondToContractService = async (id, responseMessage) => {
     throw new Error("Response message is required");
   }
 
-  const contract = await Contract.findById(id);
-  if (!contract) {
+  const contact = await Contract.findById(id);
+  if (!contact) {
     throw new Error("Contract not found");
   }
 
   try {
     await sendEmail({
-      to: contract.email,
-      subject: "Response to Your Contract Request",
-      html: contractResponseTemplate(contract.fullName, responseMessage),
+      to: contact.email,
+      subject: "Response to Your Contact Request",
+      html: getContractResponseTemplate({
+        fullName: contact.fullName,
+        email: contact.email,
+        occupation: contact.occupation,
+        message: contact.message,
+        responseMessage: responseMessage
+      }),
     });
 
-    contract.status = "Respond";
-    await contract.save();
+    contact.status = "Respond";
+    await contact.save();
 
-    return contract;
+    return { contact, responseMessage };
   } catch (emailError) {
     throw new Error(`Failed to send response email: ${emailError.message}`);
   }
 };
+
+// Usage Example:
+// const htmlContent = getContractResponseTemplate({
+//   fullName: "jishad",
+//   email: "dabak19598@filipx.com",
+//   occupation: "Software Engineer",
+//   message: "I am interested in discussing a potential web development project.",
+//   responseMessage: "Your request confirm"
+// });
+
 
 /**
  * @desc    Delete a contract service
