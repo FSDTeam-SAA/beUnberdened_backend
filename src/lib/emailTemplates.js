@@ -51,86 +51,96 @@ export const getContractResponseTemplate = ({ fullName, email, occupation, messa
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        @media only screen and (max-width: 600px) {
+          .container {
+            width: 100% !important;
+            border-radius: 0 !important;
+          }
+          .content {
+            padding: 30px 20px !important;
+          }
+          .header {
+            padding: 30px 20px !important;
+          }
+          h1 {
+            font-size: 24px !important;
+          }
+          .icon-circle {
+            width: 60px !important;
+            height: 60px !important;
+          }
+        }
+      </style>
     </head>
-    <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
       
-      <table role="presentation" style="width: 100%; border-collapse: collapse; padding: 40px 20px;">
+      <table role="presentation" style="width: 100%; border-collapse: collapse; padding: 20px 10px;">
         <tr>
           <td align="center">
             
             <!-- Main Container -->
-            <table role="presentation" style="max-width: 600px; width: 100%; background: #ffffff; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;">
+            <table role="presentation" class="container" style="max-width: 600px; width: 100%; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
               
-              <!-- Header with Gradient -->
+              <!-- Header -->
               <tr>
-                <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-                  <div style="background: rgba(255,255,255,0.2); width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M9 11L12 14L22 4" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <td class="header" style="background-color: #111827; padding: 40px 30px; text-align: center;">
+                  <div class="icon-circle" style="background-color: #ffffff; width: 70px; height: 70px; border-radius: 50%; margin: 0 auto 20px; display: inline-flex; align-items: center; justify-content: center;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M20 6L9 17L4 12" stroke="#111827" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                   </div>
-                  <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">Response Sent!</h1>
-                  <p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 16px;">We've received your inquiry</p>
+                  <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">Message Received</h1>
                 </td>
               </tr>
               
               <!-- Content Section -->
               <tr>
-                <td style="padding: 40px 30px;">
+                <td class="content" style="padding: 40px 30px;">
                   
                   <!-- Greeting -->
-                  <p style="margin: 0 0 25px; font-size: 18px; color: #2d3748; line-height: 1.6;">
-                    Hello <strong style="color: #667eea;">${fullName}</strong>,
+                  <p style="margin: 0 0 24px; font-size: 16px; color: #374151; line-height: 1.6;">
+                    Hi <strong style="color: #111827;">${fullName}</strong>,
                   </p>
                   
-                  <!-- Response Message Box -->
-                  <div style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); border-left: 4px solid #667eea; padding: 20px; border-radius: 12px; margin: 0 0 30px;">
-                    <p style="margin: 0; font-size: 16px; color: #2d3748; line-height: 1.8;">
-                      <strong style="color: #667eea; font-size: 18px;">Our Response:</strong><br/>
+                  <!-- Response Message -->
+                  <div style="background-color: #f9fafb; border-left: 3px solid #111827; padding: 16px 20px; margin: 0 0 32px;">
+                    <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.7;">
                       ${responseMessage}
                     </p>
                   </div>
                   
-                  <!-- Details Card -->
-                  <div style="background: #f7fafc; border-radius: 16px; padding: 25px; margin: 0 0 30px;">
-                    <h2 style="margin: 0 0 20px; color: #2d3748; font-size: 20px; font-weight: 600;">Your Inquiry Details</h2>
+                  <!-- Details -->
+                  <div style="margin: 0 0 32px;">
+                    <h2 style="margin: 0 0 16px; color: #111827; font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Your Details</h2>
                     
                     <table style="width: 100%; border-collapse: collapse;">
                       <tr>
-                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
-                          <span style="color: #718096; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Email</span>
-                        </td>
-                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; text-align: right;">
-                          <span style="color: #2d3748; font-size: 15px;">${email}</span>
-                        </td>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Email</td>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb; text-align: right; color: #111827; font-size: 14px;">${email}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
-                          <span style="color: #718096; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Occupation</span>
-                        </td>
-                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; text-align: right;">
-                          <span style="color: #2d3748; font-size: 15px;">${occupation}</span>
-                        </td>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Occupation</td>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb; text-align: right; color: #111827; font-size: 14px;">${occupation}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 12px 0;">
-                          <span style="color: #718096; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Your Message</span>
-                        </td>
-                        <td style="padding: 12px 0; text-align: right;">
-                          <span style="color: #2d3748; font-size: 15px;">${message}</span>
-                        </td>
+                        <td style="padding: 10px 0; color: #6b7280; font-size: 14px; vertical-align: top;">Message</td>
+                        <td style="padding: 10px 0; text-align: right; color: #111827; font-size: 14px;">${message}</td>
                       </tr>
                     </table>
                   </div>
                   
-                  
-                  <!-- Footer Message -->
-                  <p style="margin: 30px 0 0; font-size: 15px; color: #718096; line-height: 1.6; text-align: center;">
-                    Thank you for reaching out to us. We appreciate your interest and look forward to working with you!
+                  <!-- Footer -->
+                  <p style="margin: 0; font-size: 14px; color: #6b7280; line-height: 1.6; text-align: center;">
+                    Thank you for reaching out. We'll be in touch soon.
                   </p>
                   
                 </td>
+              </tr>
+              
+              <!-- Bottom Border -->
+              <tr>
+                <td style="background-color: #111827; height: 4px;"></td>
               </tr>
               
             </table>
@@ -143,7 +153,6 @@ export const getContractResponseTemplate = ({ fullName, email, occupation, messa
     </html>
   `;
 };
-
 // auto refunded template
 
 export const getConflictAfterPaymentTemplate = ({
