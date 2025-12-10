@@ -31,8 +31,8 @@
 
 
 
-const { Readable } = require('stream');
-const cloudinary = require('../config/cloudinary'); // Adjust path based on your structure
+import { Readable } from 'stream';
+import cloudinary from '../core/config/cloudinary.js'; // Adjust path based on your structure
 
 const uploadToCloudinary = (buffer, filename, folder) => {
   return new Promise((resolve, reject) => {
@@ -57,7 +57,8 @@ const uploadToCloudinary = (buffer, filename, folder) => {
   });
 };
 
-module.exports = {
-  uploadToCloudinary
-};
+export default uploadToCloudinary;
+// module.exports = {
+//   uploadToCloudinary
+// };
 
